@@ -41,7 +41,7 @@ trgexpt = []   # empty list to turn off file downloading
 # Specify the data files being requested - the first two parts of the filename
 #    giving variable_id and table_id
 #    e.g. [ 'o3_Amon', 'ua100_Aday' ]
-trgdata = [ 'ta_AmonZ', 'o3strat_AmonZ', 'toz_Amon' ]
+trgdata = [ 'ta_AmonZ', 'wtem_AmonZ' , 'vtem_AmonZ' , 'o3_AmonZ' , 'o3strat_AmonZ', 'toz_Amon' ]
 #
 # Define the local directory where data would be put
 ddir='/space/hall4/sitestore/eccc/crd/ccrn/users/rdp001/ccmi-2022/import'
@@ -56,8 +56,13 @@ trgtble = []
 for name in trgdata:
     trgtble.append(name.split('_')[1])
 #
-print(' -- Variables being searched for ')
-for ia in range(len(trgxvar)):
+nvsrch = len(trgxvar)
+if nvsrch != len(trgtble):
+    print('  ------ Problems with variable/table combinations')
+    exit()
+#
+print(' -- Variables being searched for ', nvsrch)
+for ia in range(nvsrch):
     print(trgxvar[ia] + ' in ' + trgtble[ia])
 #
 #  ---- get login credentials
@@ -253,36 +258,40 @@ if trgexpt:
                         mtab = invntry[ia][ib][ic][id][ie][0]
                         for ig in range(1,nvars[icnt4]+1):
                             xvar = invntry[ia][ib][ic][id][ie][ig][0]
-                            if expt in trgexpt and mtab in trgtble  and  xvar in trgxvar:
-                                print('Found ---', ia, ib, ic, id, ie, ig, mdl, expt,
-                                   rsim, mtab, xvar)
-                                ftpc.cwd(droot+'/'+invntry[ia][0]+'/'+mdl+'/'+
-                                         expt+'/'+rsim+'/'+mtab+'/'+xvar)
-                                inner_list = list(ftpc.mlsd())
-                                ldirs=[]
-                                for name, properties in inner_list:
-                                    if properties['type'] == 'dir':
-                                        ldirs.append(name)
-                                ftpc.cwd(ldirs[0])
+                            if expt in trgexpt:
+                                vpull=False
+                                for ih in range(nvsrch):
+                                    if mtab == trgtble[ih] and xvar == trgxvar[ih]: vpull=True
+                                if vpull:
+                                    print('Found ---', ia, ib, ic, id, ie, ig, mdl, expt,
+                                       rsim, mtab, xvar)
+                                    ftpc.cwd(droot+'/'+invntry[ia][0]+'/'+mdl+'/'+
+                                             expt+'/'+rsim+'/'+mtab+'/'+xvar)
+                                    inner_list = list(ftpc.mlsd())
+                                    ldirs=[]
+                                    for name, properties in inner_list:
+                                        if properties['type'] == 'dir':
+                                            ldirs.append(name)
+                                    ftpc.cwd(ldirs[0])
 #
 #                ------ there may be more than one version directory so we take
 #                       the last on the list since it should be the latest date
-                                inner_list = list(ftpc.mlsd())
-                                ldirs=[]
-                                for name, properties in inner_list:
-                                    if properties['type'] == 'dir':
-                                        ldirs.append(name)
-                                print(ldirs)
-                                ftpc.cwd(ldirs[-1])
+                                    inner_list = list(ftpc.mlsd())
+                                    ldirs=[]
+                                    for name, properties in inner_list:
+                                        if properties['type'] == 'dir':
+                                            ldirs.append(name)
+                                    print(ldirs)
+                                    ftpc.cwd(ldirs[-1])
 #
 #                ------ finally, the list of files
-                                inner_list = list(ftpc.mlsd())
-                                lfiles=[]
-                                for name, properties in inner_list:
-                                    if properties['type'] == 'file':
-                                        lfiles.append(name)
-                                for dfile in lfiles:
-                                    ftpc.retrbinary('RETR %s' % dfile, open(dfile, "wb").write)
+                                    inner_list = list(ftpc.mlsd())
+                                    lfiles=[]
+                                    for name, properties in inner_list:
+                                        if properties['type'] == 'file':
+                                            lfiles.append(name)
+                                    for dfile in lfiles:
+                                        ftpc.retrbinary('RETR %s' % dfile, open(dfile, "wb").write)
 #
                         icnt4 += 1
                     icnt3 += 1
