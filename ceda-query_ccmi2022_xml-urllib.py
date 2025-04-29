@@ -31,6 +31,7 @@
 """
 
 from urllib.request import urlopen
+import urllib.error
 import xml.etree.ElementTree as ET
 import numpy as np
 from copy import deepcopy
@@ -48,7 +49,12 @@ def get_elements(url, tag1, tag2, attribute_name,verbose=False):
               'xlink': 'http://www.w3.org/1999/xlink'}
     if verbose:
         print(url)
-    usock = urlopen(url)
+    for ntry in range(5):
+        try:
+            usock = urlopen(url)
+            break
+        except urllib.error.HTTPError:
+            print('Possible communication error. Trying again - ',ntry)
     xmldoc = ET.parse(usock)
     usock.close()
     root = xmldoc.getroot()
@@ -359,7 +365,7 @@ cert = 'my/directory/ceda_pydap_cert_code/creds.pem'
 OverwriteExistingFile=False
 
 # Specify whether or not we want to generate a new inventory file -- inventory_file must be a valid file if so!
-use_existing_inventory_file=True
+use_existing_inventory_file=False
 
 # The inventory file must be specified here if use_existing_inventory_file=True
 # The file name convention for the inventory file includes a yyyymmddhhmm datestring on the end of the file name
